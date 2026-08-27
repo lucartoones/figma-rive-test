@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rive Embed - Figma Sites</title>
+    <style>
+        /* Removemos qualquer margem para o iframe encaixar perfeitamente no componente do Figma */
+        body, html { 
+            margin: 0; padding: 0; 
+            width: 100%; height: 100%; 
+            overflow: hidden; 
+            background-color: transparent; /* Fundamental para sobreposições */
+        }
+        canvas { width: 100%; height: 100%; display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+
+    <!-- Carrega a biblioteca oficial do Rive -->
+    <script src="https://unpkg.com/@rive-app/canvas@latest"></script>
+    <script>
+        // 1. Captura as variáveis passadas pela URL do iframe no Figma
+        const urlParams = new URLSearchParams(window.location.search);
+        const imageUrl = urlParams.get('foto'); 
+        
+        // 2. Inicializa o Rive
+        const r = new rive.Rive({
+            src: 'card-hover.riv', // Substitua pelo nome do seu arquivo .riv
+            canvas: document.getElementById('canvas'),
+            autoplay: true,
+            stateMachines: 'State Machine 1', // Deve ser o nome exato da sua State Machine no editor
+            onLoad: () => {
+                r.resizeDrawingSurfaceToCanvas();
+            },
+            // 3. Interceptador de Assets (Para injetar a foto via URL dinamicamente)
+            assetLoader: (asset, bytes) => {
+                // Verifica se o asset que o Rive está pedindo é uma imagem e se temos a URL
+                if (asset.isImage && imageUrl) {
+                    fetch(imageUrl)
+                        .then((res) => res.arrayBuffer())
+                        .then((buffer) => {
+                            // Decodifica a imagem externa e injeta no Rive
+                            const riveImage = r.decodeImage(new Uint8Array(buffer));
+                            asset.setRenderImage(riveImage);
+                            asset.unref(); // Previne vazamento de memória
+                        })
+                        .catch((err) => console.error("Erro de CORS ou carregamento:", err));
+                    return true; // Diz ao Rive que nós gerenciamos o carregamento desse asset
+                }
+                return false; 
+            }
+        });
+
+        // Mantém a proporção perfeita se o bloco for redimensionado no Figma
+        window.addEventListener('resize', () => {
+            if (r) r.resizeDrawingSurfaceToCanvas();
+        });
+    </script>
+</body>
+</html>
