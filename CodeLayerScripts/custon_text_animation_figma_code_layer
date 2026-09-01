@@ -1,0 +1,73 @@
+import { defineProperties } from "figma:react";
+import { 
+  useRive, 
+  useViewModel, 
+  useViewModelInstance, 
+  useViewModelInstanceString 
+} from "@rive-app/react-canvas";
+import { useEffect, useMemo } from "react";
+
+export default function RiveComponent({
+  riveFileUrl = "https://lucartoones.github.io/figma-rive-test/rive_test_file.riv",
+  stateMachineName = "StateMachine",
+  viewModelName = "ViewModel1", 
+  textPropertyPath = "designername",
+  textValue = "Lucas Corrêa",
+}) {
+  const stableUrl = useMemo(() => riveFileUrl, [riveFileUrl]);
+
+  const { rive, RiveComponent: RiveCanvas } = useRive({
+    src: stableUrl,
+    stateMachines: stateMachineName,
+    autoplay: true,
+    autoBind: false,
+  });
+
+  const viewModel = useViewModel(rive, { name: viewModelName });
+  const viewModelInstance = useViewModelInstance(viewModel, { rive });
+
+  const { setValue: setDesignerName } = useViewModelInstanceString(
+    textPropertyPath,
+    viewModelInstance
+  );
+
+  useEffect(() => {
+    if (setDesignerName && textValue) {
+      setDesignerName(textValue);
+    }
+  }, [setDesignerName, textValue]);
+
+  return (
+    <div className="w-full h-full flex items-center justify-center bg-transparent relative">
+      <RiveCanvas style={{ width: "100%", height: "100%" }} />
+    </div>
+  );
+}
+
+defineProperties(RiveComponent, {
+  riveFileUrl: {
+    label: "Rive File URL",
+    type: "string",
+    defaultValue: "https://lucartoones.github.io/figma-rive-test/rive_test_file.riv",
+  },
+  stateMachineName: {
+    label: "State Machine Name",
+    type: "string",
+    defaultValue: "StateMachine",
+  },
+  viewModelName: {
+    label: "View Model Name",
+    type: "string",
+    defaultValue: "ViewModel1",
+  },
+  textPropertyPath: {
+    label: "Property Name",
+    type: "string",
+    defaultValue: "designername",
+  },
+  textValue: {
+    label: "Text Value (from CMS)",
+    type: "string",
+    defaultValue: "Lucas Corrêa",
+  },
+});
