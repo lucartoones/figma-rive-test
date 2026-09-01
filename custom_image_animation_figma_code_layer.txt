@@ -1,0 +1,98 @@
+import { defineProperties } from "figma:react";
+import { 
+  useRive, 
+  useViewModel, 
+  useViewModelInstance,
+  useViewModelInstanceColor,
+  useViewModelInstanceImage
+} from "@rive-app/react-canvas";
+
+import * as RiveCore from "@rive-app/canvas";
+import { useEffect, useMemo } from "react";
+
+export default function RiveImageColorComponent({
+  riveFileUrl = "https://lucartoones.github.io/figma-rive-test/custom_image_animation.riv",
+  stateMachineName = "State Machine 1",
+  viewModelName = "ViewModel1", 
+  imagePropertyPath = "placeholder1",
+  imageUrl = "https://lucartoones.github.io/figma-rive-test/cirrus-updated.png",
+  colorPropertyPath = "backgroundcolor",
+  colorHex = "#000000",
+}) {
+  const stableUrl = useMemo(() => riveFileUrl, [riveFileUrl]);
+
+  const { rive, RiveComponent: RiveCanvas } = useRive({
+    src: stableUrl,
+    stateMachine: stateMachineName,
+    autoplay: true,
+    autoBind: false,
+  });
+
+  const viewModel = useViewModel(rive, { name: viewModelName });
+  const viewModelInstance = useViewModelInstance(viewModel, { rive });
+
+  // Utilizando os hooks nativos do Rive para Data Binding
+  const { setRgb } = useViewModelInstanceColor(colorPropertyPath, viewModelInstance);
+  const { setValue: setImage } = useViewModelInstanceImage(imagePropertyPath, viewModelInstance);
+
+  // 1. Efeito para injetar a Cor
+  useEffect(() => {
+    if (setRgb && colorHex) {
+      const cleanHex = colorHex.replace('#', '');
+      if (cleanHex.length === 6) {
+        const r = parseInt(cleanHex.substring(0, 2), 16);
+        const g = parseInt(cleanHex.substring(2, 4), 16);
+        const b = parseInt(cleanHex.substring(4, 6), 16);
+        setRgb(r, g, b);
+      }
+    }
+  }, [setRgb, colorHex]);
+
+  // 2. Efeito para injetar a Imagem
+  useEffect(() => {
+    if (!setImage || !imageUrl) return;
+
+    let isMounted = true; 
+
+    fetch(imageUrl)
+      .then((response) => {
+        if (!response.ok) throw new Error("Erro ao baixar imagem");
+        return response.arrayBuffer();
+      })
+      .then(async (buffer) => { 
+        if (!isMounted) return;
+
+        try {
+          const decodeFn = RiveCore.decodeImage || RiveCore.default?.decodeImage;
+          if (!decodeFn) return;
+
+          const riveImage = await decodeFn(new Uint8Array(buffer));
+          setImage(riveImage);
+          riveImage.unref(); 
+        } catch (err) {
+          console.error("❌ Erro de decodificação:", err);
+        }
+      })
+      .catch((err) => console.error("❌ Erro de Fetch:", err));
+
+    return () => {
+      isMounted = false;
+    };
+  }, [setImage, imageUrl]);
+
+  return (
+    <div className="w-full h-full flex items-center justify-center bg-transparent relative">
+      <RiveCanvas style={{ width: "100%", height: "100%" }} />
+    </div>
+  );
+}
+
+defineProperties(RiveImageColorComponent, {
+  riveFileUrl: { label: "Rive File URL", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/custom_image_animation.riv" },
+  stateMachineName: { label: "State Machine", type: "string", defaultValue: "State Machine 1" },
+  viewModelName: { label: "View Model Name", type: "string", defaultValue: "ViewModel1" },
+  imagePropertyPath: { label: "Image Property (Rive)", type: "string", defaultValue: "placeholder1" },
+  imageUrl: { label: "Image URL", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/cirrus-updated.png" },
+  colorPropertyPath: { label: "Color Property (Rive)", type: "string", defaultValue: "backgroundcolor" },
+  colorHex: { label: "Color (HEX)", type: "string", defaultValue: "#000000" },
+});
