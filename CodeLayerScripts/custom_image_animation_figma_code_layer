@@ -1,98 +1,93 @@
 import { defineProperties } from "figma:react";
-import { 
-  useRive, 
-  useViewModel, 
+import {
+  useRive,
+  useViewModel,
   useViewModelInstance,
   useViewModelInstanceColor,
-  useViewModelInstanceImage
+  useViewModelInstanceImage,
 } from "@rive-app/react-canvas";
-
 import * as RiveCore from "@rive-app/canvas";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
+
+// O bundler do Figma às vezes expõe o pacote só em `default`
+const decodeImage = RiveCore.decodeImage ?? RiveCore.default?.decodeImage;
+const ASSETS = "https://lucartoones.github.io/figma-rive-test/Assets/RiveDefault";
+
+function useRiveImage(path, url, viewModelInstance) {
+  const { setValue: setImage } = useViewModelInstanceImage(path, viewModelInstance);
+
+  useEffect(() => {
+    if (!setImage || !url || !decodeImage) return;
+    let active = true;
+    fetch(url)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.arrayBuffer();
+      })
+      .then((buffer) => decodeImage(new Uint8Array(buffer)))
+      .then((image) => {
+        if (active) setImage(image);
+        image.unref();
+      })
+      .catch((err) => console.error(`❌ Erro ao carregar ${path}:`, err));
+    return () => {
+      active = false;
+    };
+  }, [setImage, url]);
+}
 
 export default function RiveImageColorComponent({
   riveFileUrl = "https://lucartoones.github.io/figma-rive-test/custom_image_animation.riv",
   stateMachineName = "State Machine 1",
-  viewModelName = "ViewModel1", 
-  imagePropertyPath = "placeholder1",
-  imageUrl = "https://lucartoones.github.io/figma-rive-test/cirrus-updated.png",
+  viewModelName = "ViewModel1",
+  imagePropertyPrefix = "placeholder",
+  imageUrl1 = `${ASSETS}/default1.png`,
+  imageUrl2 = `${ASSETS}/default2.png`,
+  imageUrl3 = `${ASSETS}/default3.png`,
+  imageUrl4 = `${ASSETS}/default4.png`,
+  imageUrl5 = `${ASSETS}/default5.png`,
+  imageUrl6 = `${ASSETS}/default6.png`,
+  imageUrl7 = `${ASSETS}/default7.png`,
+  imageUrl8 = `${ASSETS}/default8.png`,
   colorPropertyPath = "backgroundcolor",
   colorHex = "#000000",
 }) {
-  const stableUrl = useMemo(() => riveFileUrl, [riveFileUrl]);
-
   const { rive, RiveComponent: RiveCanvas } = useRive({
-    src: stableUrl,
+    src: riveFileUrl,
     stateMachine: stateMachineName,
     autoplay: true,
     autoBind: false,
   });
-
   const viewModel = useViewModel(rive, { name: viewModelName });
   const viewModelInstance = useViewModelInstance(viewModel, { rive });
-
-  // Utilizando os hooks nativos do Rive para Data Binding
   const { setRgb } = useViewModelInstanceColor(colorPropertyPath, viewModelInstance);
-  const { setValue: setImage } = useViewModelInstanceImage(imagePropertyPath, viewModelInstance);
 
-  // 1. Efeito para injetar a Cor
+  // Lista de tamanho fixo, então a ordem dos hooks não muda entre renders
+  [imageUrl1, imageUrl2, imageUrl3, imageUrl4, imageUrl5, imageUrl6, imageUrl7, imageUrl8].forEach((url, i) =>
+    useRiveImage(`${imagePropertyPrefix}${i + 1}`, url, viewModelInstance)
+  );
+
   useEffect(() => {
-    if (setRgb && colorHex) {
-      const cleanHex = colorHex.replace('#', '');
-      if (cleanHex.length === 6) {
-        const r = parseInt(cleanHex.substring(0, 2), 16);
-        const g = parseInt(cleanHex.substring(2, 4), 16);
-        const b = parseInt(cleanHex.substring(4, 6), 16);
-        setRgb(r, g, b);
-      }
-    }
+    const rgb = colorHex?.match(/^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+    if (setRgb && rgb) setRgb(...rgb.slice(1).map((h) => parseInt(h, 16)));
   }, [setRgb, colorHex]);
 
-  // 2. Efeito para injetar a Imagem
-  useEffect(() => {
-    if (!setImage || !imageUrl) return;
-
-    let isMounted = true; 
-
-    fetch(imageUrl)
-      .then((response) => {
-        if (!response.ok) throw new Error("Erro ao baixar imagem");
-        return response.arrayBuffer();
-      })
-      .then(async (buffer) => { 
-        if (!isMounted) return;
-
-        try {
-          const decodeFn = RiveCore.decodeImage || RiveCore.default?.decodeImage;
-          if (!decodeFn) return;
-
-          const riveImage = await decodeFn(new Uint8Array(buffer));
-          setImage(riveImage);
-          riveImage.unref(); 
-        } catch (err) {
-          console.error("❌ Erro de decodificação:", err);
-        }
-      })
-      .catch((err) => console.error("❌ Erro de Fetch:", err));
-
-    return () => {
-      isMounted = false;
-    };
-  }, [setImage, imageUrl]);
-
-  return (
-    <div className="w-full h-full flex items-center justify-center bg-transparent relative">
-      <RiveCanvas style={{ width: "100%", height: "100%" }} />
-    </div>
-  );
+  return <RiveCanvas style={{ width: "100%", height: "100%" }} />;
 }
 
 defineProperties(RiveImageColorComponent, {
   riveFileUrl: { label: "Rive File URL", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/custom_image_animation.riv" },
   stateMachineName: { label: "State Machine", type: "string", defaultValue: "State Machine 1" },
   viewModelName: { label: "View Model Name", type: "string", defaultValue: "ViewModel1" },
-  imagePropertyPath: { label: "Image Property (Rive)", type: "string", defaultValue: "placeholder1" },
-  imageUrl: { label: "Image URL", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/cirrus-updated.png" },
+  imagePropertyPrefix: { label: "Image Property Prefix (Rive)", type: "string", defaultValue: "placeholder" },
+  imageUrl1: { label: "Image URL 1", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/Assets/RiveDefault/default1.png" },
+  imageUrl2: { label: "Image URL 2", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/Assets/RiveDefault/default2.png" },
+  imageUrl3: { label: "Image URL 3", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/Assets/RiveDefault/default3.png" },
+  imageUrl4: { label: "Image URL 4", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/Assets/RiveDefault/default4.png" },
+  imageUrl5: { label: "Image URL 5", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/Assets/RiveDefault/default5.png" },
+  imageUrl6: { label: "Image URL 6", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/Assets/RiveDefault/default6.png" },
+  imageUrl7: { label: "Image URL 7", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/Assets/RiveDefault/default7.png" },
+  imageUrl8: { label: "Image URL 8", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/Assets/RiveDefault/default8.png" },
   colorPropertyPath: { label: "Color Property (Rive)", type: "string", defaultValue: "backgroundcolor" },
   colorHex: { label: "Color (HEX)", type: "string", defaultValue: "#000000" },
 });
