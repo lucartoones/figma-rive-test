@@ -11,7 +11,7 @@ import { useEffect } from "react";
 
 // O bundler do Figma às vezes expõe o pacote só em `default`
 const decodeImage = RiveCore.decodeImage ?? RiveCore.default?.decodeImage;
-const ASSETS = "https://lucartoones.github.io/figma-rive-test/Assets/RiveDefault";
+const ASSETS = "https://lucartoones.github.io/figma-rive-test/Assets/WantaFanta";
 
 function useRiveImage(path, url, viewModelInstance) {
   const { setValue: setImage } = useViewModelInstanceImage(path, viewModelInstance);
@@ -41,14 +41,14 @@ export default function RiveImageColorComponent({
   stateMachineName = "State Machine 1",
   viewModelName = "ViewModel1",
   imagePropertyPrefix = "placeholder",
-  imageUrl1 = `${ASSETS}/default1.png`,
-  imageUrl2 = `${ASSETS}/default2.png`,
-  imageUrl3 = `${ASSETS}/default3.png`,
-  imageUrl4 = `${ASSETS}/default4.png`,
-  imageUrl5 = `${ASSETS}/default5.png`,
-  imageUrl6 = `${ASSETS}/default6.png`,
-  imageUrl7 = `${ASSETS}/default7.png`,
-  imageUrl8 = `${ASSETS}/default8.png`,
+  imageUrl1 = `${ASSETS}/fanta1.png`,
+  imageUrl2 = `${ASSETS}/fanta2.png`,
+  imageUrl3 = `${ASSETS}/fanta3.png`,
+  imageUrl4 = `${ASSETS}/fanta4.png`,
+  imageUrl5 = `${ASSETS}/fanta5.png`,
+  imageUrl6 = `${ASSETS}/fanta6.png`,
+  imageUrl7 = `${ASSETS}/fanta7.png`,
+  imageUrl8 = `${ASSETS}/fanta8.png`,
   colorPropertyPath = "backgroundcolor",
   colorHex = "#000000",
 }) {
@@ -80,14 +80,14 @@ defineProperties(RiveImageColorComponent, {
   stateMachineName: { label: "State Machine", type: "string", defaultValue: "State Machine 1" },
   viewModelName: { label: "View Model Name", type: "string", defaultValue: "ViewModel1" },
   imagePropertyPrefix: { label: "Image Property Prefix (Rive)", type: "string", defaultValue: "placeholder" },
-  imageUrl1: { label: "Image URL 1", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/Assets/RiveDefault/default1.png" },
-  imageUrl2: { label: "Image URL 2", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/Assets/RiveDefault/default2.png" },
-  imageUrl3: { label: "Image URL 3", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/Assets/RiveDefault/default3.png" },
-  imageUrl4: { label: "Image URL 4", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/Assets/RiveDefault/default4.png" },
-  imageUrl5: { label: "Image URL 5", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/Assets/RiveDefault/default5.png" },
-  imageUrl6: { label: "Image URL 6", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/Assets/RiveDefault/default6.png" },
-  imageUrl7: { label: "Image URL 7", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/Assets/RiveDefault/default7.png" },
-  imageUrl8: { label: "Image URL 8", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/Assets/RiveDefault/default8.png" },
+  imageUrl1: { label: "Image URL 1", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/Assets/WantaFanta/fanta1.png" },
+  imageUrl2: { label: "Image URL 2", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/Assets/WantaFanta/fanta2.png" },
+  imageUrl3: { label: "Image URL 3", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/Assets/WantaFanta/fanta3.png" },
+  imageUrl4: { label: "Image URL 4", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/Assets/WantaFanta/fanta4.png" },
+  imageUrl5: { label: "Image URL 5", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/Assets/WantaFanta/fanta5.png" },
+  imageUrl6: { label: "Image URL 6", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/Assets/WantaFanta/fanta6.png" },
+  imageUrl7: { label: "Image URL 7", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/Assets/WantaFanta/fanta7.png" },
+  imageUrl8: { label: "Image URL 8", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/Assets/WantaFanta/fanta8.png" },
   colorPropertyPath: { label: "Color Property (Rive)", type: "string", defaultValue: "backgroundcolor" },
   colorHex: { label: "Color (HEX)", type: "string", defaultValue: "#000000" },
 });
