@@ -1,0 +1,139 @@
+import { defineProperties } from "figma:react";
+import {
+  useRive,
+  useViewModel,
+  useViewModelInstance,
+  useViewModelInstanceString,
+  useViewModelInstanceNumber,
+  useViewModelInstanceBoolean,
+  useViewModelInstanceColor,
+  useViewModelInstanceEnum,
+  useViewModelInstanceImage,
+} from "@rive-app/react-canvas";
+
+import * as RiveCore from "@rive-app/canvas";
+import { useEffect, useMemo } from "react";
+
+// ===== Edite só este bloco para cada animação =====
+const RIVE_FILE_URL = "https://lucartoones.github.io/figma-rive-test/custom_image_animation.riv";
+const STATE_MACHINE = "State Machine 1";
+const VIEW_MODEL = "ViewModel1";
+
+// name = nome exato da propriedade no ViewModel do Rive
+// type = string | number | boolean | color | enum | image
+const PROPS = [
+  { name: "placeholder1", type: "image", default: "https://lucartoones.github.io/figma-rive-test/cirrus-updated.png" },
+  { name: "backgroundcolor", type: "color", default: "#000000" },
+];
+// ==================================================
+
+function StringBind({ name, value, vmi }) {
+  const { setValue } = useViewModelInstanceString(name, vmi);
+  useEffect(() => { if (setValue) setValue(value ?? ""); }, [setValue, value]);
+  return null;
+}
+
+function NumberBind({ name, value, vmi }) {
+  const { setValue } = useViewModelInstanceNumber(name, vmi);
+  useEffect(() => {
+    const n = parseFloat(value);
+    if (setValue && !Number.isNaN(n)) setValue(n);
+  }, [setValue, value]);
+  return null;
+}
+
+function BooleanBind({ name, value, vmi }) {
+  const { setValue } = useViewModelInstanceBoolean(name, vmi);
+  useEffect(() => { if (setValue) setValue(String(value).toLowerCase() === "true"); }, [setValue, value]);
+  return null;
+}
+
+function ColorBind({ name, value, vmi }) {
+  const { setRgb } = useViewModelInstanceColor(name, vmi);
+  useEffect(() => {
+    const hex = (value || "").replace("#", "");
+    if (setRgb && /^[0-9a-f]{6}$/i.test(hex)) {
+      setRgb(parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16));
+    }
+  }, [setRgb, value]);
+  return null;
+}
+
+function EnumBind({ name, value, vmi }) {
+  const { setValue } = useViewModelInstanceEnum(name, vmi);
+  useEffect(() => { if (setValue && value) setValue(value); }, [setValue, value]);
+  return null;
+}
+
+function ImageBind({ name, value, vmi }) {
+  const { setValue } = useViewModelInstanceImage(name, vmi);
+  useEffect(() => {
+    if (!setValue || !value) return;
+    let isMounted = true;
+
+    fetch(value)
+      .then((response) => {
+        if (!response.ok) throw new Error("Erro ao baixar imagem");
+        return response.arrayBuffer();
+      })
+      .then(async (buffer) => {
+        if (!isMounted) return;
+        const decodeFn = RiveCore.decodeImage || RiveCore.default?.decodeImage;
+        if (!decodeFn) return;
+        const riveImage = await decodeFn(new Uint8Array(buffer));
+        setValue(riveImage);
+        riveImage.unref();
+      })
+      .catch((err) => console.error(`❌ Imagem "${name}":`, err));
+
+    return () => { isMounted = false; };
+  }, [setValue, value]);
+  return null;
+}
+
+const BINDERS = {
+  string: StringBind,
+  number: NumberBind,
+  boolean: BooleanBind,
+  color: ColorBind,
+  enum: EnumBind,
+  image: ImageBind,
+};
+
+export default function RiveGenericComponent(props) {
+  const src = useMemo(() => props.riveFileUrl, [props.riveFileUrl]);
+
+  const { rive, RiveComponent: RiveCanvas } = useRive({
+    src,
+    stateMachines: props.stateMachineName,
+    autoplay: true,
+    autoBind: false,
+  });
+
+  const viewModel = useViewModel(rive, { name: props.viewModelName });
+  const vmi = useViewModelInstance(viewModel, { rive });
+
+  return (
+    <div className="w-full h-full flex items-center justify-center bg-transparent relative">
+      <RiveCanvas style={{ width: "100%", height: "100%" }} />
+      {PROPS.map(({ name, type }) => {
+        const Bind = BINDERS[type];
+        if (!Bind) {
+          console.error(`❌ Tipo desconhecido "${type}" na propriedade "${name}"`);
+          return null;
+        }
+        return <Bind key={name} name={name} value={props[name]} vmi={vmi} />;
+      })}
+    </div>
+  );
+}
+
+// shortcut: todos os controles são "string" (único tipo testado no Figma Sites); troque por number/boolean/color se o Figma aceitar.
+defineProperties(RiveGenericComponent, {
+  riveFileUrl: { label: "Rive File URL", type: "string", defaultValue: RIVE_FILE_URL },
+  stateMachineName: { label: "State Machine", type: "string", defaultValue: STATE_MACHINE },
+  viewModelName: { label: "View Model Name", type: "string", defaultValue: VIEW_MODEL },
+  ...Object.fromEntries(
+    PROPS.map((p) => [p.name, { label: `${p.name} (${p.type})`, type: "string", defaultValue: String(p.default ?? "") }])
+  ),
+});

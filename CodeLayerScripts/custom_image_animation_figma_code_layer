@@ -23,7 +23,7 @@ export default function RiveImageColorComponent({
 
   const { rive, RiveComponent: RiveCanvas } = useRive({
     src: stableUrl,
-    stateMachine: stateMachineName,
+    stateMachines: stateMachineName,
     autoplay: true,
     autoBind: false,
   });
