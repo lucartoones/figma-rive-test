@@ -8,7 +8,7 @@ import {
 import { useEffect } from "react";
 
 export default function RiveComponent({
-  riveFileUrl = "https://lucartoones.github.io/figma-rive-test/rive_test_file.riv",
+  riveFileUrl = "https://lucartoones.github.io/figma-rive-test/RiveAnimations/custom_text_animation.riv",
   stateMachineName = "StateMachine",
   viewModelName = "ViewModel1",
   textPropertyPath = "designername",
@@ -32,7 +32,7 @@ export default function RiveComponent({
 }
 
 defineProperties(RiveComponent, {
-  riveFileUrl: { label: "Rive File URL", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/rive_test_file.riv" },
+  riveFileUrl: { label: "Rive File URL", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/RiveAnimations/custom_text_animation.riv" },
   stateMachineName: { label: "State Machine Name", type: "string", defaultValue: "StateMachine" },
   viewModelName: { label: "View Model Name", type: "string", defaultValue: "ViewModel1" },
   textPropertyPath: { label: "Property Name", type: "string", defaultValue: "designername" },

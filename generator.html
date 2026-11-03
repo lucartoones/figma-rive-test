@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Code Layer Rive</title>
+    <style>
+        :root { color-scheme: light dark; }
+        body { font: 14px/1.5 system-ui, sans-serif; max-width: 900px; margin: 0 auto; padding: 24px 16px; }
+        label { display: block; margin: 12px 0 4px; font-weight: 600; }
+        input[type=text], select { width: 100%; box-sizing: border-box; padding: 8px; font: inherit; }
+        button { padding: 8px 16px; font: inherit; margin-top: 12px; cursor: pointer; }
+        textarea { width: 100%; box-sizing: border-box; height: 420px; font: 12px/1.4 ui-monospace, monospace; margin-top: 8px; }
+        .hint { opacity: .7; font-size: 13px; }
+        #status { margin-top: 12px; white-space: pre-line; }
+        #output-section[hidden], #pickers[hidden] { display: none; }
+        canvas { display: none; }
+    </style>
+</head>
+<body>
+    <h1>Gerador de Code Layer Rive → Figma Sites</h1>
+    <p class="hint">Lê os ViewModels e as State Machines do .riv e gera o Code Layer pronto para colar no Figma Sites.</p>
+
+    <label for="url">URL publicada do .riv</label>
+    <input id="url" type="text" placeholder="https://lucartoones.github.io/figma-rive-test/RiveAnimations/minha_animacao.riv">
+
+    <label for="file">Ou um arquivo local (a URL acima ainda vai no código gerado)</label>
+    <input id="file" type="file" accept=".riv">
+
+    <button id="load">Ler arquivo</button>
+    <div id="status"></div>
+
+    <div id="pickers" hidden>
+        <label for="vm">ViewModel</label>
+        <select id="vm"></select>
+        <label for="sm">State Machine</label>
+        <select id="sm"></select>
+    </div>
+
+    <div id="output-section" hidden>
+        <label for="output">Código do Code Layer</label>
+        <textarea id="output" readonly></textarea>
+        <button id="copy">Copiar</button>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <script src="https://unpkg.com/@rive-app/canvas@2.45.0"></script>
+    <script>
+        const TEMPLATE_URL = "CodeLayerScripts/rive_generic_figma_code_layer";
+        const BLOCK_RE = /\/\/ ===== Edite[\s\S]*?\n\/\/ =+\n/;
+        // Tipos do runtime Rive → tipos aceitos pelo template
+        const TYPE_MAP = { string: "string", number: "number", boolean: "boolean", color: "color", enumType: "enum", image: "image" };
+
+        const $ = (id) => document.getElementById(id);
+        let riveInstance = null;
+
+        function defaultValue(instance, prop) {
+            if (!instance) return "";
+            try {
+                switch (prop.type) {
+                    case "string": return instance.string(prop.name)?.value ?? "";
+                    case "number": return instance.number(prop.name)?.value ?? 0;
+                    case "boolean": return instance.boolean(prop.name)?.value ?? false;
+                    case "enumType": return instance.enum(prop.name)?.value ?? "";
+                    case "color": {
+                        const argb = instance.color(prop.name)?.value;
+                        return argb == null ? "#000000" : "#" + (argb & 0xffffff).toString(16).padStart(6, "0");
+                    }
+                }
+            } catch (err) {
+                console.warn(`Sem valor padrão para "${prop.name}":`, err);
+            }
+            return "";
+        }
+
+        function buildBlock(url, stateMachine, viewModel) {
+            const instance = viewModel.defaultInstance();
+            const lines = [];
+            const skipped = [];
+            for (const prop of viewModel.properties) {
+                const type = TYPE_MAP[prop.type];
+                if (!type) { skipped.push(`${prop.name} (${prop.type})`); continue; }
+                lines.push(`  { name: ${JSON.stringify(prop.name)}, type: "${type}", default: ${JSON.stringify(defaultValue(instance, prop))} },`);
+            }
+            const block = [
+                "// ===== Edite só este bloco para cada animação =====",
+                `const RIVE_FILE_URL = ${JSON.stringify(url)};`,
+                `const STATE_MACHINE = ${JSON.stringify(stateMachine)};`,
+                `const VIEW_MODEL = ${JSON.stringify(viewModel.name)};`,
+                "",
+                "// name = nome exato da propriedade no ViewModel do Rive",
+                "// type = string | number | boolean | color | enum | image",
+                "const PROPS = [",
+                ...lines,
+                "];",
+                ...skipped.map((s) => `// ignorada (tipo não suportado): ${s}`),
+                "// ==================================================",
+                "",
+            ].join("\n");
+            return { block, skipped };
+        }
+
+        let template = null;
+        async function loadTemplate() {
+            if (template !== null) return template;
+            try {
+                const res = await fetch(TEMPLATE_URL);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                template = await res.text();
+                if (!BLOCK_RE.test(template)) throw new Error("bloco de edição não encontrado no template");
+            } catch (err) {
+                console.warn("Template indisponível, gerando só o bloco:", err);
+                template = "";
+            }
+            return template;
+        }
+
+        async function render() {
+            const vm = riveInstance.viewModelByName($("vm").value);
+            if (!vm) return;
+            const { block, skipped } = buildBlock($("url").value.trim(), $("sm").value, vm);
+            const tpl = await loadTemplate();
+            $("output").value = tpl ? tpl.replace(BLOCK_RE, () => block) : block;
+            $("output-section").hidden = false;
+            $("status").textContent =
+                (tpl ? "Código completo gerado." : "Template não encontrado: cole este bloco no topo do rive_generic_figma_code_layer.") +
+                (skipped.length ? `\n${skipped.length} propriedade(s) ignorada(s), veja o fim do bloco.` : "");
+        }
+
+        function fillSelect(select, names) {
+            select.innerHTML = "";
+            for (const name of names) select.add(new Option(name, name));
+        }
+
+        async function load() {
+            const url = $("url").value.trim();
+            const file = $("file").files[0];
+            if (!url && !file) { $("status").textContent = "Informe a URL ou escolha um arquivo."; return; }
+            if (!url) $("status").textContent = "Aviso: sem URL, o código gerado não vai encontrar o .riv no Figma.";
+
+            riveInstance?.cleanup();
+            $("pickers").hidden = true;
+            $("output-section").hidden = true;
+
+            const source = file ? { buffer: await file.arrayBuffer() } : { src: url };
+            riveInstance = new rive.Rive({
+                ...source,
+                canvas: $("canvas"),
+                autoplay: false,
+                autoBind: false,
+                onLoad: () => {
+                    const vmNames = [];
+                    for (let i = 0; i < riveInstance.viewModelCount; i++) vmNames.push(riveInstance.viewModelByIndex(i).name);
+                    if (!vmNames.length) { $("status").textContent = "Este .riv não tem nenhum ViewModel."; return; }
+
+                    fillSelect($("vm"), vmNames);
+                    const defaultVm = riveInstance.defaultViewModel();
+                    if (defaultVm) $("vm").value = defaultVm.name;
+                    fillSelect($("sm"), riveInstance.stateMachineNames);
+                    $("pickers").hidden = false;
+                    render();
+                },
+                onLoadError: (err) => { $("status").textContent = "Erro ao ler o .riv (URL errada ou CORS?)."; console.error(err); },
+            });
+        }
+
+        $("load").addEventListener("click", load);
+        $("vm").addEventListener("change", render);
+        $("sm").addEventListener("change", render);
+        $("copy").addEventListener("click", async () => {
+            await navigator.clipboard.writeText($("output").value);
+            $("copy").textContent = "Copiado!";
+            setTimeout(() => ($("copy").textContent = "Copiar"), 1500);
+        });
+    </script>
+</body>
+</html>
