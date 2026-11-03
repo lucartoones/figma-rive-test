@@ -16,7 +16,7 @@ export default function RiveComponent({
 }) {
   const { rive, RiveComponent: RiveCanvas } = useRive({
     src: riveFileUrl,
-    stateMachines: stateMachineName,
+    stateMachine: stateMachineName,
     autoplay: true,
     autoBind: false,
   });

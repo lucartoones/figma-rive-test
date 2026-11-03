@@ -105,7 +105,7 @@ export default function RiveGenericComponent(props) {
 
   const { rive, RiveComponent: RiveCanvas } = useRive({
     src,
-    stateMachines: props.stateMachineName,
+    stateMachine: props.stateMachineName,
     autoplay: true,
     autoBind: false,
   });
