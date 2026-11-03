@@ -5,11 +5,11 @@ import {
   useViewModelInstance,
   useViewModelInstanceColor,
   useViewModelInstanceImage,
-} from "@rive-app/react-canvas";
-import * as RiveCore from "@rive-app/canvas";
+} from "@rive-app/react-canvas@4.38.0";
+import * as RiveCore from "@rive-app/canvas@2.48.0";
 import { useEffect } from "react";
 
-// O bundler do Figma às vezes expõe o pacote só em `default`
+// canvas@2.48.0 é a mesma versão que o react-canvas@4.38.0 usa por dentro; outra versão cria outro runtime e a imagem é ignorada
 const decodeImage = RiveCore.decodeImage ?? RiveCore.default?.decodeImage;
 const ASSETS = "https://lucartoones.github.io/figma-rive-test/Assets/WantaFanta";
 

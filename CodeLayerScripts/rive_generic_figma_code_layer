@@ -9,9 +9,10 @@ import {
   useViewModelInstanceColor,
   useViewModelInstanceEnum,
   useViewModelInstanceImage,
-} from "@rive-app/react-canvas";
+} from "@rive-app/react-canvas@4.38.0";
 
-import * as RiveCore from "@rive-app/canvas";
+// canvas@2.48.0 é a mesma versão que o react-canvas@4.38.0 usa por dentro; outra versão cria outro runtime e a imagem é ignorada
+import * as RiveCore from "@rive-app/canvas@2.48.0";
 import { useEffect, useMemo } from "react";
 
 // ===== Edite só este bloco para cada animação =====
