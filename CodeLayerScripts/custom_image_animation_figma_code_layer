@@ -37,7 +37,7 @@ function useRiveImage(path, url, viewModelInstance) {
 }
 
 export default function RiveImageColorComponent({
-  riveFileUrl = "https://lucartoones.github.io/figma-rive-test/custom_image_animation.riv",
+  riveFileUrl = "https://lucartoones.github.io/figma-rive-test/RiveAnimations/custom_image_animation.riv",
   stateMachineName = "State Machine 1",
   viewModelName = "ViewModel1",
   imagePropertyPrefix = "placeholder",
@@ -76,7 +76,7 @@ export default function RiveImageColorComponent({
 }
 
 defineProperties(RiveImageColorComponent, {
-  riveFileUrl: { label: "Rive File URL", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/custom_image_animation.riv" },
+  riveFileUrl: { label: "Rive File URL", type: "string", defaultValue: "https://lucartoones.github.io/figma-rive-test/RiveAnimations/custom_image_animation.riv" },
   stateMachineName: { label: "State Machine", type: "string", defaultValue: "State Machine 1" },
   viewModelName: { label: "View Model Name", type: "string", defaultValue: "ViewModel1" },
   imagePropertyPrefix: { label: "Image Property Prefix (Rive)", type: "string", defaultValue: "placeholder" },

@@ -15,7 +15,7 @@ import * as RiveCore from "@rive-app/canvas";
 import { useEffect, useMemo } from "react";
 
 // ===== Edite só este bloco para cada animação =====
-const RIVE_FILE_URL = "https://lucartoones.github.io/figma-rive-test/custom_image_animation.riv";
+const RIVE_FILE_URL = "https://lucartoones.github.io/figma-rive-test/RiveAnimations/custom_image_animation.riv";
 const STATE_MACHINE = "State Machine 1";
 const VIEW_MODEL = "ViewModel1";
 
